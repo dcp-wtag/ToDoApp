@@ -3,8 +3,8 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 const buttonState = { state: 'all' };
-
 var allTaskCount = 0, completeTaskCount = 0, incompleteTaskCount = 0;
+
 
 addAllTask();
 
@@ -541,6 +541,14 @@ function emptyDisplayRemove() {
   container.remove();
 }
 
+async function hell(data) {
+  for(var result of data) {
+      if(result.is_completed == true) {
+        completeTaskCount++;
+      }
+  }
+}
+
 
 async function addAllTask() {
 
@@ -549,8 +557,16 @@ async function addAllTask() {
     .from('todo')
     .select()
     .order('id', { ascending: false })
-    .limit(12)
   mainSpinnerClose();
+
+  allTaskCount = data.length;
+  for(var result of data) {
+      if(result.is_completed == true) {
+        completeTaskCount++;
+      }
+  }
+  incompleteTaskCount = allTaskCount - completeTaskCount;
+  data.length = Math.min(12, data.length);
 
   const container = document.querySelector('.tasks');
 
@@ -938,3 +954,4 @@ function disableAllCompleteIncompleteButton() {
   document.getElementById('com-btn').disabled = false;
   document.getElementById('incom-btn').disabled = false;
 }
+
