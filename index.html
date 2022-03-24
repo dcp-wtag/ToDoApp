@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>ToDo App</title>
+</head>
+<body>
+    <div id='preloader'></div>
+    <div id='main-spinner' style="position: absolute;"><img class="main-spinner-img" src="./icons/Vector (8).png" alt=""></div>
+    <div id='toast'><img class="tick-toast" src="./icons/Vector (9).png" alt=""><p id='tick-text'>Changes are saved Successfully</p></div>
+    <div id='toast-unsuccess'><p id='tick-text'>We couldn't save your changes</p></div>
+    <div class="par-div">
+        <div class="appbar">
+            <div class="logoTitle-search">
+                <div class="logo-title-container">
+                    <img src="icons/Vector.png" alt="logo">
+                    <p id="title">Todos</p>
+                </div>
+                <div class='search-icon-container'>
+                    <input type="text" name="" id="search-text-area" style="visibility: hidden;">
+                    <button data-title="Search any Task" class="search-btn"><img class="search-icon" src="icons/Vector (1).png" alt="search" onclick="searchImg()"></button>
+                </div>
+            </div>
+        </div>
+        <div class = 'container-div'>
+            <div class="task-header">
+                <p id="add-task">Add Tasks</p>
+            </div>
+            <div class="btn-div">
+                <button id="create-btn" onclick="addedTaskCart()">+ Create</button>
+                <div class="all-incom-com-btn-div">
+                    <button id = "all-btn" onclick="allTask()">All</button>
+                    <button id="incom-btn" onclick="inCmpTask()">Incomplete</button>
+                    <button id="com-btn" onclick="cmpTask()">Complete</button>
+                </div>
+            </div>
+            <div class = "tasks"></div>
+        </div>
+    </div>
+    <script src="windowLoader.js"></script>
+    <script src="check.js"></script>
+    <script src="textArea.js"></script>
+
+</body>
+</html>
+
