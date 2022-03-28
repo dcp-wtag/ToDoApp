@@ -108,7 +108,7 @@ body{
     font-weight: 500;
     font-size: 16px;
     line-height: 19px;
-    border: 2px solid #DDE2FF;
+    border: 1px solid #DDE2FF;
     cursor: pointer;
 }
 
@@ -124,7 +124,7 @@ body{
     font-weight: 500;
     font-size: 16px;
     line-height: 19px;
-    border: 2px solid #DDE2FF;
+    border: 1px solid #DDE2FF;
     cursor: pointer;
 }
 
@@ -140,7 +140,7 @@ body{
     font-weight: 500;
     font-size: 16px;
     line-height: 19px;
-    border: 2px solid #DDE2FF;
+    border: 1px solid #DDE2FF;
     cursor: pointer;
 }
 
@@ -386,11 +386,11 @@ body{
 }
 
 #preloader {
-    background: #E5E5E5 url('./icons/Group\ 1.png') no-repeat center center;
+    background: #F8F9FF url('./icons/Group\ 1.png') no-repeat center center;
     height: 100vh;
     width: 100%;
     position: fixed;
-    z-index: 100;
+    z-index: 10000;
 }
 
 .cart-spinner{
@@ -545,37 +545,23 @@ body{
     animation: fadein 1s;
   }
 
-  .delete-btn {
+  .delete-btn, .edit-btn, .complete-btn, .search-btn, .logo-title-btn {
       background: none;
       border: none;
       padding: 0;
       cursor: pointer;
   }
-
-  .edit-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .complete-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .search-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
+  
+.logo-title-btn {
+    display: flex;
+    justify-content: space-between;
+    width: 150px;
+    align-items: center;
   }
 
 [data-title]:hover:after {
     opacity: 1;
-    transition: all 0.1s ease 0.5s;
+    /* transition: all 0.1s ease 0.5s; */
     visibility: visible;
 }
 

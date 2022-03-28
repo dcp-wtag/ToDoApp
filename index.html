@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <title>ToDo App</title>
+    <link rel="icon" href="./icons/Vector.png" type="image/icon type">
 </head>
 <body>
     <div id='preloader'></div>
@@ -19,8 +19,7 @@
         <div class="appbar">
             <div class="logoTitle-search">
                 <div class="logo-title-container">
-                    <img src="icons/Vector.png" alt="logo">
-                    <p id="title">Todos</p>
+                    <button class="logo-title-btn" onClick="window.location.reload();"><img src="icons/Vector.png" alt="logo"><p id="title">Todos</p></button>
                 </div>
                 <div class='search-icon-container'>
                     <input type="text" name="" id="search-text-area" style="visibility: hidden;">
@@ -41,6 +40,7 @@
                 </div>
             </div>
             <div class = "tasks"></div>
+            <div class = 'load-more-div' style="display: none;"><button class = 'load-more-button' onclick="loadMore()">Load More</button></div>
         </div>
     </div>
     <script src="windowLoader.js"></script>

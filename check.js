@@ -6,12 +6,15 @@ const buttonState = { state: 'all' };
 var allTaskCount = 0, completeTaskCount = 0, incompleteTaskCount = 0;
 
 
-addAllTask();
+allTask();
 
 function addedTaskCart() {
 
   const container = document.querySelector('.tasks');
   document.getElementById('create-btn').disabled = true;
+  var lastChild;
+
+  loadMoreButtonShow(container);
 
   disableAllCompleteIncompleteButton();
 
@@ -24,7 +27,8 @@ function addedTaskCart() {
   }
   
   if (container.childElementCount == 12) {
-    container.removeChild(container.lastChild);
+    lastChild = container.lastChild;
+    container.removeChild(lastChild);
   }
 
   const divCartElement = document.createElement('div');
@@ -68,6 +72,7 @@ function addedTaskCart() {
       incompleteTaskCount++;
       inCompletedTask(pro[0], 0);
       document.getElementById('create-btn').disabled = false;
+      loadMoreButtonShow();
     }
   });
 
@@ -94,6 +99,10 @@ function addedTaskCart() {
     if (container.childElementCount === 0) {
       emptyDisplay();
     }
+    else if(lastChild) {
+      container.append(lastChild);
+    }
+    loadMoreButtonShow();
   });
 
 
@@ -215,6 +224,8 @@ function completedTask(Data, oldDiv) {
       .delete()
       .match({ id: Data.id })
 
+      await replaceAfterDelete(container, divCartElementSpinner);
+
     spinnerClose(divCartElement, spinnerImg);
 
     toast(error);
@@ -222,14 +233,11 @@ function completedTask(Data, oldDiv) {
     if (error == null) {
       container.removeChild(divCartElementSpinner);
     }
-
     if (container.childElementCount === 0) {
       emptyDisplay();
     }
-    console.log(container.childElementCount);
-    if (allTaskCount <= 12 && document.querySelector('.load-more-div')) {
-      document.querySelector('.load-more-div').remove();
-    }
+    
+    loadMoreButtonShow();
   });
 }
 
@@ -270,7 +278,9 @@ function editedTask(oldDiv, Data) {
 
   textArea.addEventListener("keypress", function (e) {
     if (e.key === 'Enter') {
-      saveBtn.click();
+      e.preventDefault();
+      if (e.target.value.length > 0)
+        saveBtn.click();
     }
   });
 
@@ -305,7 +315,7 @@ function editedTask(oldDiv, Data) {
   divCartElement.appendChild(divButtonContainer);
 
   saveBtn.addEventListener('click', async (e) => {
-    if (oldDiv.firstChild.firstChild.firstChild.innerText != textArea.value) {
+    if (oldDiv.firstChild.firstChild.firstChild.innerText != textArea.value && textArea.value.length > 0) {
       spinnerOpen(divCartElement, spinnerImg);
       const { data, error } = await supabase
         .from('todo')
@@ -313,8 +323,8 @@ function editedTask(oldDiv, Data) {
         .match({ id: parseInt(oldDiv.firstChild.dataset.id) })
       spinnerClose(divCartElement, spinnerImg);
       toast(error);
+      oldDiv.firstChild.firstChild.firstChild.innerText = textArea.value;
     }
-    oldDiv.firstChild.firstChild.firstChild.innerText = textArea.value;
     container.replaceChild(oldDiv, divCartElementSpinner);
   });
 
@@ -348,6 +358,8 @@ function editedTask(oldDiv, Data) {
     } else {
       divCartElementSpinner.remove();
     }
+
+    loadMoreButtonShow(container);
   });
 
   delBtn.addEventListener('click', async (e) => {
@@ -361,6 +373,8 @@ function editedTask(oldDiv, Data) {
     spinnerClose(divCartElement, spinnerImg);
     toast(error);
     divCartElementSpinner.remove();
+
+    loadMoreButtonShow();
   });
 
   return divCartElementSpinner;
@@ -439,7 +453,7 @@ function inCompletedTask(Data, flag) {
 
   if (buttonState.state != 'cmp') {
     if (allTaskCount > 12 && !document.querySelector('.load-more-button')) {
-      loadMore();
+      
     }
     if (!flag) container.prepend(divCartElementSpinner);
     else container.appendChild(divCartElementSpinner);
@@ -457,6 +471,8 @@ function inCompletedTask(Data, flag) {
       .delete()
       .match({ id: parseInt(Data.id) })
 
+      await replaceAfterDelete(container, divCartElementSpinner);
+
     spinnerClose(divCartElement, spinnerImg);
     toast(error);
     if (error == null) {
@@ -466,9 +482,7 @@ function inCompletedTask(Data, flag) {
       emptyDisplay();
     }
 
-    if (allTaskCount <= 12 && document.querySelector('.load-more-div')) {
-      document.querySelector('.load-more-div').remove();
-    }
+    loadMoreButtonShow();
   });
 
   editBtn.addEventListener('click', async (e) => {
@@ -486,16 +500,69 @@ function inCompletedTask(Data, flag) {
       .from('todo')
       .update({ is_completed: true, completed_time: completedTime })
       .match({ id: parseInt(divCartElement.dataset.id) })
-    spinnerClose(divCartElement, spinnerImg);
+    
     toast(error);
     Data = data[0];
 
     if (buttonState.state === 'all') {
       completedTask(Data, divCartElementSpinner);
     } else {
+      replaceAfterDelete(container, divCartElementSpinner);
       container.removeChild(divCartElementSpinner);
+      
     }
+
+    spinnerClose(divCartElement, spinnerImg);
+
+    loadMoreButtonShow();
   });
+}
+
+
+async function replaceAfterDelete(container, divCartElementSpinner) {
+  
+  var findVal = 1500;
+    if (container.hasChildNodes()) {
+      findVal = parseInt(container.lastChild.firstChild.dataset.id);
+    }
+  
+  if(buttonState.state == 'all' && allTaskCount >= 12) {
+        const { data:addedData, error:addedError} = await supabase
+        .from('todo')
+        .select()
+        .lt('id', findVal)
+        .limit(1)
+        .order('id', { ascending: false })
+  
+          if(addedData && addedData[0].is_completed == false) {
+            inCompletedTask(addedData[0], 1);
+          }
+          else {
+            completedTask(addedData[0], divCartElementSpinner);
+          }
+    }
+    else if(buttonState.state == 'cmp' && completeTaskCount >= 12) {
+      const { data, error} = await supabase
+        .from('todo')
+        .select()
+        .lt('id', findVal)
+        .match({ is_completed: true })
+        .limit(1)
+        .order('id', { ascending: false })
+  
+        completedTask(data[0], divCartElementSpinner);
+    }
+    else if(buttonState.state == 'incmp' && incompleteTaskCount >= 12) {
+      const { data, error} = await supabase
+        .from('todo')
+        .select()
+        .lt('id', findVal)
+        .match({ is_completed: false })
+        .limit(1)
+        .order('id', { ascending: false })
+  
+        inCompletedTask(data[0], divCartElementSpinner);
+    }
 }
 
 
@@ -574,8 +641,6 @@ async function addAllTask() {
     container.removeChild(container.firstChild);
   }
 
-  const LoadMore = document.querySelector('.load-more-div');
-  const searchTask = document.querySelector('#search-text-area');
 
   // if (searchTask.value.length > 0) {
   //   var i = 0;
@@ -611,14 +676,12 @@ async function addAllTask() {
       }
     }
 
-    console.log(allTaskCount);
 
     if (allTaskCount == 0) {
       emptyDisplay();
     }
-    if (allTaskCount > 12 && !document.querySelector('.load-more-div')) {
-      loadMore();
-    }
+    loadMoreButtonShow();
+   
   //}
 }
 
@@ -627,6 +690,10 @@ async function addAllTask() {
 
 
 async function inCmpTask() {
+
+  document.getElementById('all-btn').style.background = '#FFFFFF';
+  document.getElementById('com-btn').style.background = '#FFFFFF';
+  document.getElementById('incom-btn').style.background = '#DDE2FF';
 
   buttonState.state = 'incmp';
 
@@ -650,7 +717,7 @@ async function inCmpTask() {
   // while(container.hasChildNodes) {
   //     container.removeChild();
   // }
-  const LoadMore = document.querySelector('.load-more-button');
+  
   const searchTask = document.querySelector('#search-text-area');
 
   console.log(searchTask.value.length);
@@ -684,11 +751,7 @@ async function inCmpTask() {
     if (incompleteTaskCount === 0) {
       emptyDisplay();
     }
-    console.log(incompleteTaskCount, LoadMore);
-    if (incompleteTaskCount <= 12 && LoadMore) {
-      console.log("hello")
-      LoadMore.remove();
-    }
+    loadMoreButtonShow();
   //}
 }
 
@@ -698,10 +761,16 @@ async function inCmpTask() {
 
 function allTask() {
   buttonState.state = 'all';
+  document.getElementById('all-btn').style.background = '#DDE2FF';
+  document.getElementById('com-btn').style.background = '#FFFFFF';
+  document.getElementById('incom-btn').style.background = '#FFFFFF';
   addAllTask();
 }
 
 async function cmpTask() {
+  document.getElementById('all-btn').style.background = '#FFFFFF';
+  document.getElementById('com-btn').style.background = '#DDE2FF';
+  document.getElementById('incom-btn').style.background = '#FFFFFF';
   buttonState.state = 'cmp';
 
   mainSpinnerOpen();
@@ -721,7 +790,6 @@ async function cmpTask() {
     container.removeChild(container.firstChild);
   }
 
-  const LoadMore = document.querySelector('.load-more-button');
   const searchTask = document.querySelector('#search-text-area');
 
   // if (searchTask.value.length > 0) {
@@ -754,13 +822,7 @@ async function cmpTask() {
     if (completeTaskCount === 0) {
       emptyDisplay();
     }
-
-    if (completeTaskCount <= 12 && document.querySelector('.load-more-button')) {
-      LoadMore.remove();
-    }
-    if (completeTaskCount > 12 && !LoadMore) {
-      loadMore();
-    }
+    loadMoreButtonShow();
   //}
 }
 
@@ -843,24 +905,15 @@ function searchTask(e, data) {
   }
 }
 
-function loadMore() {
-  const loadMoreDiv = document.createElement('div');
-  loadMoreButton = document.createElement('button');
-  loadMoreButton.innerText = 'Load More';
-  loadMoreDiv.className = 'load-more-div';
-  loadMoreButton.className = 'load-more-button';
-  loadMoreDiv.appendChild(loadMoreButton);
-  document.querySelector('.par-div').appendChild(loadMoreDiv);
+async function loadMore() {
 
-  loadMoreButton.addEventListener('click', async (e) => {
-    if (buttonState.state == 'all') {
       var findVal = 500;
       const container = document.querySelector('.tasks');
       if (container.hasChildNodes()) {
         findVal = parseInt(container.lastChild.firstChild.dataset.id);
       }
 
-
+    if (buttonState.state == 'all') {
       mainSpinnerOpen();
       const { data, error } = await supabase
         .from('todo')
@@ -870,36 +923,46 @@ function loadMore() {
         .order('id', { ascending: false })
       mainSpinnerClose()
 
-      var i = 0;
       for (let x of data) {
-        if (i == 12) {
-          break;
-        }
         if (x.is_completed === true) {
           completedTask(x);
         }
         else {
           inCompletedTask(x, 1);
         }
-        i++;
-      }
-      if (allTaskCount === 0) {
-        emptyDisplay();
-      }
-      if (allTaskCount > 24 && !document.querySelector('.load-more-div')) {
-        loadMore();
-      }
-      else if (allTaskCount <= 24 && document.querySelector('.load-more-div')) {
-        document.querySelector('.load-more-div').remove();
       }
     }
     else if (buttonState.state == 'cmp') {
+      mainSpinnerOpen();
+      const { data, error } = await supabase
+        .from('todo')
+        .select()
+        .lt('id', findVal)
+        .match({is_completed: true})
+        .limit(12)
+        .order('id', { ascending: false })
+      mainSpinnerClose()
 
+      for (let x of data) {
+          completedTask(x);
+      }
     }
     else {
+      mainSpinnerOpen();
+      const { data, error } = await supabase
+        .from('todo')
+        .select()
+        .lt('id', findVal)
+        .match({is_completed: false})
+        .limit(12)
+        .order('id', { ascending: false })
+      mainSpinnerClose()
 
+      for (let x of data) {
+          inCompletedTask(x, 1);
+      }
     }
-  });
+    loadMoreButtonShow(container);
 }
 
 function getDate(date) {
@@ -953,5 +1016,28 @@ function disableAllCompleteIncompleteButton() {
   document.getElementById('all-btn').disabled = false;
   document.getElementById('com-btn').disabled = false;
   document.getElementById('incom-btn').disabled = false;
+}
+
+function loadMoreButtonShow(container) {
+      const LoadMoreDiv = document.querySelector('.load-more-div'); 
+      
+      if(container && container.childElementCount == allTaskCount) {
+        LoadMoreDiv.style.display = 'none';
+      }
+      else if(buttonState.state == 'all' && allTaskCount > 12) {
+          LoadMoreDiv.style.display = 'flex';
+      }
+      else if(buttonState.state == 'cmp' && completeTaskCount > 12) {
+        LoadMoreDiv.style.display = 'flex';
+      }
+      else if(buttonState.state == 'incmp' && incompleteTaskCount > 12) {
+        LoadMoreDiv.style.display = 'flex';
+      }
+      else if(LoadMoreDiv.style.display === 'flex') {
+        LoadMoreDiv.style.display = 'none';
+      }
+      else if(container && container.childElementCount == 12) {
+          LoadMoreDiv.style.display = 'flex';
+      }
 }
 
