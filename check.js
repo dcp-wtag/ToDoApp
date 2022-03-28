@@ -5,13 +5,16 @@ supabase = supabase.createClient(supabaseUrl, supabaseKey);
 const buttonState = { state: 'all' };
 var allTaskCount = 0, completeTaskCount = 0, incompleteTaskCount = 0;
 
+async function countingAllTheTask() {
+    await countTask();
+    await allTask();
+}
 
-allTask();
 
 function addedTaskCart() {
 
   const container = document.querySelector('.tasks');
-  document.getElementById('create-btn').disabled = true;
+  const emptyScreen = document.querySelector('.empty-task');
   var lastChild;
 
   loadMoreButtonShow(container);
@@ -19,11 +22,8 @@ function addedTaskCart() {
   disableAllCompleteIncompleteButton();
 
   
-  if (container.hasChildNodes() && container.firstChild.className === 'empty-task') {
-    container.removeChild(container.firstChild);
-  }
-  else if (container.childElementCount === 0) {
-    emptyDisplay();
+  if (emptyScreen.style.display == 'flex') {
+    emptyScreen.style.display = 'none';
   }
   
   if (container.childElementCount == 12) {
@@ -48,7 +48,7 @@ function addedTaskCart() {
 
   const textArea = document.createElement('textarea');
   textArea.className = 'add-task-item';
-  textArea.autofocus = true;
+  textArea.focus();
   textArea.placeholder = "Enter your Task...";
   textArea.maxLength = "50";
   textArea.cols = "30";
@@ -103,6 +103,7 @@ function addedTaskCart() {
       container.append(lastChild);
     }
     loadMoreButtonShow();
+    emptyDisplay();
   });
 
 
@@ -115,8 +116,6 @@ function addedTaskCart() {
 }
 
 async function myFunc(txt, div, img) {
-
-  
   spinnerOpen(div, img);
   console.log(div, img);
   const { data, error } = await supabase
@@ -233,11 +232,8 @@ function completedTask(Data, oldDiv) {
     if (error == null) {
       container.removeChild(divCartElementSpinner);
     }
-    if (container.childElementCount === 0) {
-      emptyDisplay();
-    }
-    
     loadMoreButtonShow();
+    emptyDisplay();
   });
 }
 
@@ -358,8 +354,8 @@ function editedTask(oldDiv, Data) {
     } else {
       divCartElementSpinner.remove();
     }
-
     loadMoreButtonShow(container);
+    emptyDisplay();
   });
 
   delBtn.addEventListener('click', async (e) => {
@@ -375,6 +371,7 @@ function editedTask(oldDiv, Data) {
     divCartElementSpinner.remove();
 
     loadMoreButtonShow();
+    emptyDisplay();
   });
 
   return divCartElementSpinner;
@@ -478,11 +475,8 @@ function inCompletedTask(Data, flag) {
     if (error == null) {
       container.removeChild(divCartElementSpinner);
     }
-    if (allTaskCount === 0) {
-      emptyDisplay();
-    }
-
     loadMoreButtonShow();
+    emptyDisplay();
   });
 
   editBtn.addEventListener('click', async (e) => {
@@ -507,13 +501,14 @@ function inCompletedTask(Data, flag) {
     if (buttonState.state === 'all') {
       completedTask(Data, divCartElementSpinner);
     } else {
-      replaceAfterDelete(container, divCartElementSpinner);
+      await replaceAfterDelete(container, divCartElementSpinner);
       container.removeChild(divCartElementSpinner);
       
     }
 
     spinnerClose(divCartElement, spinnerImg);
 
+    emptyDisplay();
     loadMoreButtonShow();
   });
 }
@@ -521,7 +516,7 @@ function inCompletedTask(Data, flag) {
 
 async function replaceAfterDelete(container, divCartElementSpinner) {
   
-  var findVal = 1500;
+  var findVal = 15000;
     if (container.hasChildNodes()) {
       findVal = parseInt(container.lastChild.firstChild.dataset.id);
     }
@@ -538,7 +533,7 @@ async function replaceAfterDelete(container, divCartElementSpinner) {
             inCompletedTask(addedData[0], 1);
           }
           else {
-            completedTask(addedData[0], divCartElementSpinner);
+            completedTask(addedData[0]);
           }
     }
     else if(buttonState.state == 'cmp' && completeTaskCount >= 12) {
@@ -550,7 +545,7 @@ async function replaceAfterDelete(container, divCartElementSpinner) {
         .limit(1)
         .order('id', { ascending: false })
   
-        completedTask(data[0], divCartElementSpinner);
+        completedTask(data[0]);
     }
     else if(buttonState.state == 'incmp' && incompleteTaskCount >= 12) {
       const { data, error} = await supabase
@@ -561,7 +556,7 @@ async function replaceAfterDelete(container, divCartElementSpinner) {
         .limit(1)
         .order('id', { ascending: false })
   
-        inCompletedTask(data[0], divCartElementSpinner);
+        inCompletedTask(data[0], 1);
     }
 }
 
@@ -569,53 +564,43 @@ async function replaceAfterDelete(container, divCartElementSpinner) {
 // Empty Display Showing
 
 async function emptyDisplay() {
-  const mainContainer = document.querySelector('.tasks');
+    const container = document.querySelector('.tasks');
+    const emptyScreen = document.querySelector('.empty-task');
+    const emptyTitle = document.querySelector('.empty-head');
 
-  mainSpinnerOpen();
-  const { data, count, error } = await supabase
-    .from('todo')
-    .select('id', { count: 'exact' })
-  mainSpinnerClose();
-  // toast(error);
-  if (count == 0) {
-    document.getElementById('all-btn').disabled = true;
-    document.getElementById('com-btn').disabled = true;
-    document.getElementById('incom-btn').disabled = true;
-  }
-
-  const container = document.createElement('div');
-  container.className = 'empty-task';
-
-  const emptyImage = document.createElement('img');
-  emptyImage.className = 'empty-image'
-  emptyImage.src = './icons/empty.png';
-
-  const emptyHead = document.createElement('p');
-  emptyHead.innerText = "You didn't add any task. Please, add one.";
-  emptyHead.className = 'empty-head';
-
-  container.appendChild(emptyImage);
-  container.appendChild(emptyHead);
-
-  mainContainer.appendChild(container);
+    if(buttonState.state == 'all' && allTaskCount == 0 && container.childElementCount == 0) {
+      emptyTitle.innerText = "You didn't add any task. Please, add one.";
+     emptyScreen.style.display = 'flex';
+    }
+    else if(buttonState.state == 'cmp' && completeTaskCount == 0  && container.childElementCount == 0) {
+      emptyTitle.innerText = "You didn't add any completed task. Please, complete one.";
+      emptyScreen.style.display = 'flex';
+    }
+    else if(buttonState.state == 'incmp' && incompleteTaskCount == 0  && container.childElementCount == 0) {
+      emptyTitle.innerText = "You didn't add any incompleted task. Please, add one.";
+      emptyScreen.style.display = 'flex';
+    }
+    else if(emptyScreen) {
+      emptyScreen.style.display = 'none';
+    }
 }
 
+async function countTask() {
+    mainSpinnerOpen();
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .order('id', { ascending: false })
+    mainSpinnerClose();
 
-// Empty Display Remove
-
-function emptyDisplayRemove() {
-  const container = document.querySelector(".empty-task");
-  container.remove();
+    allTaskCount = data.length;
+    for(var result of data) {
+        if(result.is_completed == true) {
+          completeTaskCount++;
+        }
+    }
+    incompleteTaskCount = allTaskCount - completeTaskCount;
 }
-
-async function hell(data) {
-  for(var result of data) {
-      if(result.is_completed == true) {
-        completeTaskCount++;
-      }
-  }
-}
-
 
 async function addAllTask() {
 
@@ -624,16 +609,9 @@ async function addAllTask() {
     .from('todo')
     .select()
     .order('id', { ascending: false })
+    .limit(12)
   mainSpinnerClose();
 
-  allTaskCount = data.length;
-  for(var result of data) {
-      if(result.is_completed == true) {
-        completeTaskCount++;
-      }
-  }
-  incompleteTaskCount = allTaskCount - completeTaskCount;
-  data.length = Math.min(12, data.length);
 
   const container = document.querySelector('.tasks');
 
@@ -641,48 +619,17 @@ async function addAllTask() {
     container.removeChild(container.firstChild);
   }
 
-
-  // if (searchTask.value.length > 0) {
-  //   var i = 0;
-  //   for (let x of data) {
-  //     if (i == 12) break;
-  //     if (x.task_name.search(searchTask.value) > -1) {
-  //       if (x.is_completed) completedTask(x);
-  //       else inCompletedTask(x, 1);
-  //       i++;
-  //     }
-  //   }
-
-    // if (i === 0) {
-    //   emptyDisplay();
-    // }
-
-
-
-    // if (allTaskCount <= 12 && LoadMore) {
-    //   LoadMore.remove();
-    // }
-    // else if (allTaskCount > 12 && !LoadMore) {
-    //   loadMore();
-    // }
-  // }
-  //else {
-    for (let x of data) {
-      if (x.is_completed === true) {
-        completedTask(x);
-      }
-      else {
-        inCompletedTask(x, 1);
-      }
+  for (let x of data) {
+    if (x.is_completed === true) {
+      completedTask(x);
     }
-
-
-    if (allTaskCount == 0) {
-      emptyDisplay();
+    else {
+      inCompletedTask(x, 1);
     }
-    loadMoreButtonShow();
-   
-  //}
+  }
+
+  emptyDisplay();
+  loadMoreButtonShow();
 }
 
 
@@ -714,57 +661,24 @@ async function inCmpTask() {
     container.removeChild(container.firstChild);
   }
 
-  // while(container.hasChildNodes) {
-  //     container.removeChild();
-  // }
-  
-  const searchTask = document.querySelector('#search-text-area');
-
-  console.log(searchTask.value.length);
-  // if (searchTask.value.length > 0) {
-  //   var i = 0;
-  //   for (let x of data) {
-  //     if (i == 12) break;
-  //     if (x.task_name.search(searchTask.value) > -1) {
-  //       i++;
-  //       inCompletedTask(x, 1);
-  //     }
-  //   }
-
-  //   if (i === 0) {
-  //     emptyDisplay();
-  //   }
-
-  //   if (i < 12 && document.querySelector('.load-more-button')) {
-  //     LoadMore.remove();
-  //   }
-  //   if (i == 12 && !LoadMore) {
-  //     loadMore();
-  //   }
-  // }
-
-  // else {
-    for (let x of data) {
-      inCompletedTask(x, 1);
-    }
-
-    if (incompleteTaskCount === 0) {
-      emptyDisplay();
-    }
-    loadMoreButtonShow();
-  //}
+  for (let x of data) {
+    inCompletedTask(x, 1);
+  }
+  console.log(incompleteTaskCount, completeTaskCount, allTaskCount);
+  loadMoreButtonShow();
+  emptyDisplay();
 }
 
 
 // all filter button
 
 
-function allTask() {
+async function allTask() {
   buttonState.state = 'all';
   document.getElementById('all-btn').style.background = '#DDE2FF';
   document.getElementById('com-btn').style.background = '#FFFFFF';
   document.getElementById('incom-btn').style.background = '#FFFFFF';
-  addAllTask();
+  await addAllTask();
 }
 
 async function cmpTask() {
@@ -791,39 +705,12 @@ async function cmpTask() {
   }
 
   const searchTask = document.querySelector('#search-text-area');
-
-  // if (searchTask.value.length > 0) {
-  //   var i = 0;
-  //   for (let x of data) {
-  //     if (i == 12) break;
-  //     if (x.task_name.search(searchTask.value) > -1) {
-  //       completedTask(x);
-  //       i++;
-  //     }
-  //   }
-
-  //   if (i === 0) {
-  //     emptyDisplay();
-  //   }
-
-  //   if (i < 12 && document.querySelector('.load-more-button')) {
-  //     LoadMore.remove();
-  //   }
-  //   if (i == 12 && !LoadMore) {
-  //     loadMore();
-  //   }
-  // }
-
-  // else {
     for (let x of data) {
       completedTask(x);
     }
 
-    if (completeTaskCount === 0) {
-      emptyDisplay();
-    }
     loadMoreButtonShow();
-  //}
+    emptyDisplay();
 }
 
 async function searchImg() {
@@ -1018,26 +905,60 @@ function disableAllCompleteIncompleteButton() {
   document.getElementById('incom-btn').disabled = false;
 }
 
-function loadMoreButtonShow(container) {
-      const LoadMoreDiv = document.querySelector('.load-more-div'); 
-      
-      if(container && container.childElementCount == allTaskCount) {
-        LoadMoreDiv.style.display = 'none';
-      }
-      else if(buttonState.state == 'all' && allTaskCount > 12) {
-          LoadMoreDiv.style.display = 'flex';
-      }
-      else if(buttonState.state == 'cmp' && completeTaskCount > 12) {
-        LoadMoreDiv.style.display = 'flex';
-      }
-      else if(buttonState.state == 'incmp' && incompleteTaskCount > 12) {
-        LoadMoreDiv.style.display = 'flex';
-      }
-      else if(LoadMoreDiv.style.display === 'flex') {
-        LoadMoreDiv.style.display = 'none';
-      }
-      else if(container && container.childElementCount == 12) {
-          LoadMoreDiv.style.display = 'flex';
-      }
+function enableAllCompleteIncompleteButton() {
+  document.getElementById('all-btn').disabled = true;
+  document.getElementById('com-btn').disabled = true;
+  document.getElementById('incom-btn').disabled = true;
 }
 
+function loadMoreButtonShow(container) {
+      const loadMoreDiv = document.querySelector('.load-more-div');
+
+      console.log("hello");
+
+      if(container && container.childElementCount == 12) {
+        loadMoreDiv.style.display = 'flex';
+      }
+      else if((container && buttonState.state == 'all' && allTaskCount == container.childElementCount) || 
+      (container && buttonState.state == 'cmp' && completeTaskCount == container.childElementCount) || 
+      (container && buttonState.state == 'incmp' && incompleteTaskCount == container.childElementCount)) {
+        loadMoreDiv.style.display = 'none';
+      }
+      else if(buttonState.state == 'all' && allTaskCount > 12) {
+          loadMoreDiv.style.display = 'flex';
+      }
+      else if(buttonState.state == 'cmp' && completeTaskCount > 12) {
+        loadMoreDiv.style.display = 'flex';
+      }
+      else if(buttonState.state == 'incmp' && incompleteTaskCount > 12) {
+        loadMoreDiv.style.display = 'flex';
+      }
+      else if(loadMoreDiv.style.display === 'flex') {
+        loadMoreDiv.style.display = 'none';
+      }
+      showLessButtonShow(container);
+}
+
+function showLessButtonShow(container) {
+  const showLessDiv = document.querySelector('.show-less-div');
+  if(container && ((buttonState.state == 'all' && allTaskCount > 12 && allTaskCount == container.childElementCount) ||
+  (buttonState.state == 'cmp' && completeTaskCount > 12 && completeTaskCount == container.childElementCount) || 
+  (buttonState.state == 'incmp' && incompleteTaskCount > 12 & incompleteTaskCount == container.childElementCount))) {
+      showLessDiv.style.display = 'flex';
+  }
+  else if(showLessDiv.style.display == 'flex') {
+      showLessDiv.style.display = 'none';
+  }
+}
+
+function showLess() {
+    if(buttonState.state == 'all') {
+        allTask();
+    }
+    else if(buttonState.state == 'cmp') {
+        cmpTask();
+    }
+    else {
+      inCmpTask();
+    }
+}

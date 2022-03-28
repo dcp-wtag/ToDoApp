@@ -154,7 +154,6 @@ body{
     align-self: center;
     margin-top: 50px;
     flex-wrap: wrap;
-    min-height: 60vh;
 }
 
 
@@ -216,9 +215,11 @@ body{
 .empty-task {
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: 85%;
     align-items: center;
     justify-content: center;
+    height: 60vh;
+    align-self: center;
 }
 
 .empty-head {
@@ -267,11 +268,11 @@ body{
     color: #32394B;
 }
 
-.load-more-div {
+.load-more-div, .show-less-div {
     align-self: center;
 }
 
-.load-more-button {
+.load-more-button, .show-less-button {
     height: 36px;
     width: 117px;
     color: white;

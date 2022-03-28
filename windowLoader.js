@@ -6,6 +6,6 @@ window.addEventListener('load', function(){
 
 function loading() {
     loader.style.display = 'none';
+    countingAllTheTask();
 }
-
  
