@@ -15,10 +15,11 @@ function addedTaskCart() {
 
   const container = document.querySelector('.tasks');
   const emptyScreen = document.querySelector('.empty-task');
+  const createButton = document.getElementById('create-btn');
   var lastChild;
 
   loadMoreButtonShow(container);
-
+  createButton.disabled = true;
   disableAllCompleteIncompleteButton();
 
   
@@ -66,6 +67,7 @@ function addedTaskCart() {
   btn.addEventListener('click', async (e) => {
     if (textArea.value.length > 0) {
       btn.disabled = true;
+      createButton.disabled = false;
       let pro = await myFunc(textArea.value, divCartElement, spinnerImg);
       container.removeChild(container.firstChild);
       allTaskCount++;
@@ -528,11 +530,11 @@ async function replaceAfterDelete(container, divCartElementSpinner) {
         .lt('id', findVal)
         .limit(1)
         .order('id', { ascending: false })
-  
-          if(addedData && addedData[0].is_completed == false) {
+        console.log(findVal)
+          if(addedData.length > 0 && addedData[0].is_completed == false) {
             inCompletedTask(addedData[0], 1);
           }
-          else {
+          else if(addedData.length > 0 && addedData[0].is_completed == true) {
             completedTask(addedData[0]);
           }
     }
@@ -563,14 +565,18 @@ async function replaceAfterDelete(container, divCartElementSpinner) {
 
 // Empty Display Showing
 
-async function emptyDisplay() {
+async function emptyDisplay(searchedWord) {
     const container = document.querySelector('.tasks');
     const emptyScreen = document.querySelector('.empty-task');
     const emptyTitle = document.querySelector('.empty-head');
-
-    if(buttonState.state == 'all' && allTaskCount == 0 && container.childElementCount == 0) {
+    
+    if(searchedWord && !container.hasChildNodes()) {
+      emptyTitle.innerText = "The task containing ${searchedWord} doesn't found.";
+      emptyScreen.style.display = 'flex';
+    }
+    else if(buttonState.state == 'all' && allTaskCount == 0 && container.childElementCount == 0) {
       emptyTitle.innerText = "You didn't add any task. Please, add one.";
-     emptyScreen.style.display = 'flex';
+      emptyScreen.style.display = 'flex';
     }
     else if(buttonState.state == 'cmp' && completeTaskCount == 0  && container.childElementCount == 0) {
       emptyTitle.innerText = "You didn't add any completed task. Please, complete one.";
@@ -675,10 +681,10 @@ async function inCmpTask() {
 
 async function allTask() {
   buttonState.state = 'all';
+  await addAllTask();
   document.getElementById('all-btn').style.background = '#DDE2FF';
   document.getElementById('com-btn').style.background = '#FFFFFF';
   document.getElementById('incom-btn').style.background = '#FFFFFF';
-  await addAllTask();
 }
 
 async function cmpTask() {
@@ -729,67 +735,64 @@ async function searchImg() {
     else cmpTask();
   }
 
-  // mainSpinnerOpen();
-
-  const { data, error } = await supabase
-    .from('todo')
-    .select()
-    .order('id', { ascending: true })
-
-  // mainSpinnerClose();
-
-  searchTextArea.addEventListener('keyup', (e) => { searchTask(e, data) });
+  setTimeout(searchTextArea.addEventListener('keyup', (e) => { searchTask(e), 1000}));
 }
 
-function searchTask(e, data) {
+async function searchTask(e) {
   var searchWord = e.target.value;
-
-
   const container = document.querySelector('.tasks');
 
   while (container.hasChildNodes()) {
     container.removeChild(container.firstChild);
   }
 
-  if (document.querySelector('.load-more-div')) {
-    document.querySelector('.load-more-div').remove();
-  }
-
-  let x = 0;
   if (buttonState.state == 'all') {
+    console.log('%'+searchWord+'%');
+    const { data, error } = await supabase
+    .from('todo')
+    .select()
+    .ilike('task_name', '%'+searchWord+'%')
+    .order('id', { ascending: false })
+
+    console.log(data);
+    
     for (var i = 0; i < data.length; i++) {
-      if (x == 12) break;
-      if (data[i].task_name.search(searchWord) > -1) {
-        if (data[i].is_completed) completedTask(data[i]);
-        else inCompletedTask(data[i]);
-        x++;
-      }
+      if (i == 12) break;
+      if (data[i].is_completed) completedTask(data[i]);
+      else inCompletedTask(data[i], 1);
     }
+    loadMoreButtonShow(data.length);
   }
   else if (buttonState.state == 'incmp') {
+
+    const { data, error } = await supabase
+    .from('todo')
+    .select()
+    .ilike('task_name', '%${searchWord}%')
+    .match({is_completed: false})
+    .order('id', { ascending: false })
+
     for (var i = 0; i < data.length; i++) {
-      if (x == 12) break;
-      if (data[i].task_name.search(searchWord) > -1 && data[i].is_completed == false) {
-        inCompletedTask(data[i]);
-        x++;
-      }
+      if (i == 12) break;
+      inCompletedTask(data[i]);
     }
+    loadMoreButtonShow(data.length);
   }
   else {
+    const { data, error } = await supabase
+    .from('todo')
+    .select()
+    .ilike('task_name', '%${searchWord}%')
+    .match({is_completed: true})
+    .order('id', { ascending: false })
+
     for (var i = 0; i < data.length; i++) {
-      if (x == 12) break;
-      if (data[i].task_name.search(searchWord) > -1 && data[i].is_completed == true) {
-        completedTask(data[i]);
-        x++;
-      }
+      if (i == 12) break;
+      completedTask(data[i]);
     }
+    loadMoreButtonShow(data.length);
   }
-  if (x == 12 && !document.querySelector('.load-more-button')) {
-    loadMore();
-  }
-  if (x == 0) {
-    emptyDisplay();
-  }
+  emptyDisplay();
 }
 
 async function loadMore() {
@@ -913,10 +916,14 @@ function enableAllCompleteIncompleteButton() {
 
 function loadMoreButtonShow(container) {
       const loadMoreDiv = document.querySelector('.load-more-div');
+      const showLessDiv = document.querySelector('.show-less-div');
 
       console.log("hello");
 
-      if(container && container.childElementCount == 12) {
+      if(showLessDiv && showLessDiv.style.display == 'flex') {
+          return;
+      }
+      else if(container && container.childElementCount == 12) {
         loadMoreDiv.style.display = 'flex';
       }
       else if((container && buttonState.state == 'all' && allTaskCount == container.childElementCount) || 
@@ -952,6 +959,7 @@ function showLessButtonShow(container) {
 }
 
 function showLess() {
+    document.querySelector('.show-less-div').style.display = 'none';
     if(buttonState.state == 'all') {
         allTask();
     }
