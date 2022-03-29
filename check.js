@@ -4,10 +4,11 @@ supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 const buttonState = { state: 'all' };
 var allTaskCount = 0, completeTaskCount = 0, incompleteTaskCount = 0;
+let timer;
 
 async function countingAllTheTask() {
-    await countTask();
-    await allTask();
+  await countTask();
+  await allTask();
 }
 
 
@@ -22,11 +23,11 @@ function addedTaskCart() {
   createButton.disabled = true;
   disableAllCompleteIncompleteButton();
 
-  
+
   if (emptyScreen.style.display == 'flex') {
     emptyScreen.style.display = 'none';
   }
-  
+
   if (container.childElementCount == 12) {
     lastChild = container.lastChild;
     container.removeChild(lastChild);
@@ -101,7 +102,7 @@ function addedTaskCart() {
     if (container.childElementCount === 0) {
       emptyDisplay();
     }
-    else if(lastChild) {
+    else if (lastChild) {
       container.append(lastChild);
     }
     loadMoreButtonShow();
@@ -225,7 +226,7 @@ function completedTask(Data, oldDiv) {
       .delete()
       .match({ id: Data.id })
 
-      await replaceAfterDelete(container, divCartElementSpinner);
+    await replaceAfterDelete(container, divCartElementSpinner);
 
     spinnerClose(divCartElement, spinnerImg);
 
@@ -271,7 +272,7 @@ function editedTask(oldDiv, Data) {
   textArea.autofocus = true;
   textArea.setSelectionRange(end, end);
   textArea.focus();
-  
+
   divTextArea.appendChild(textArea);
 
   textArea.addEventListener("keypress", function (e) {
@@ -327,8 +328,8 @@ function editedTask(oldDiv, Data) {
   });
 
   cmpBtn.addEventListener('click', async (e) => {
-      completeTaskCount++;
-      incompleteTaskCount--;
+    completeTaskCount++;
+    incompleteTaskCount--;
     var completedTime = getDifference(new Date(Data.created_at), new Date());
     console.log(typeof completedTime)
 
@@ -433,7 +434,7 @@ function inCompletedTask(Data, flag) {
   editBtn.className = 'edit-btn';
   editBtn.dataset.title = "Edit this Task";
   editBtn.appendChild(editBtnLogo);
-  
+
   const delBtnlogo = document.createElement('img');
   delBtnlogo.className = 'del-btn-edit';
   delBtnlogo.src = './icons/Vector(5).png';
@@ -452,7 +453,7 @@ function inCompletedTask(Data, flag) {
 
   if (buttonState.state != 'cmp') {
     if (allTaskCount > 12 && !document.querySelector('.load-more-button')) {
-      
+
     }
     if (!flag) container.prepend(divCartElementSpinner);
     else container.appendChild(divCartElementSpinner);
@@ -470,7 +471,7 @@ function inCompletedTask(Data, flag) {
       .delete()
       .match({ id: parseInt(Data.id) })
 
-      await replaceAfterDelete(container, divCartElementSpinner);
+    await replaceAfterDelete(container, divCartElementSpinner);
 
     spinnerClose(divCartElement, spinnerImg);
     toast(error);
@@ -487,8 +488,8 @@ function inCompletedTask(Data, flag) {
   });
 
   cmpBtn.addEventListener('click', async (e) => {
-      completeTaskCount++;
-      incompleteTaskCount--;
+    completeTaskCount++;
+    incompleteTaskCount--;
     var completedTime = getDifference(new Date(Data.created_at), new Date());
     console.log(typeof completedTime)
     spinnerOpen(divCartElement, spinnerImg);
@@ -496,7 +497,7 @@ function inCompletedTask(Data, flag) {
       .from('todo')
       .update({ is_completed: true, completed_time: completedTime })
       .match({ id: parseInt(divCartElement.dataset.id) })
-    
+
     toast(error);
     Data = data[0];
 
@@ -505,7 +506,7 @@ function inCompletedTask(Data, flag) {
     } else {
       await replaceAfterDelete(container, divCartElementSpinner);
       container.removeChild(divCartElementSpinner);
-      
+
     }
 
     spinnerClose(divCartElement, spinnerImg);
@@ -517,125 +518,143 @@ function inCompletedTask(Data, flag) {
 
 
 async function replaceAfterDelete(container, divCartElementSpinner) {
-  
+
   var findVal = 15000;
-    if (container.hasChildNodes()) {
-      findVal = parseInt(container.lastChild.firstChild.dataset.id);
+  if (container.hasChildNodes()) {
+    findVal = parseInt(container.lastChild.firstChild.dataset.id);
+  }
+
+  if (buttonState.state == 'all' && allTaskCount >= 12) {
+    const { data: addedData, error: addedError } = await supabase
+      .from('todo')
+      .select()
+      .lt('id', findVal)
+      .limit(1)
+      .order('id', { ascending: false })
+    console.log(findVal)
+    if (addedData.length > 0 && addedData[0].is_completed == false) {
+      inCompletedTask(addedData[0], 1);
     }
-  
-  if(buttonState.state == 'all' && allTaskCount >= 12) {
-        const { data:addedData, error:addedError} = await supabase
-        .from('todo')
-        .select()
-        .lt('id', findVal)
-        .limit(1)
-        .order('id', { ascending: false })
-        console.log(findVal)
-          if(addedData.length > 0 && addedData[0].is_completed == false) {
-            inCompletedTask(addedData[0], 1);
-          }
-          else if(addedData.length > 0 && addedData[0].is_completed == true) {
-            completedTask(addedData[0]);
-          }
+    else if (addedData.length > 0 && addedData[0].is_completed == true) {
+      completedTask(addedData[0]);
     }
-    else if(buttonState.state == 'cmp' && completeTaskCount >= 12) {
-      const { data, error} = await supabase
-        .from('todo')
-        .select()
-        .lt('id', findVal)
-        .match({ is_completed: true })
-        .limit(1)
-        .order('id', { ascending: false })
-  
-        completedTask(data[0]);
-    }
-    else if(buttonState.state == 'incmp' && incompleteTaskCount >= 12) {
-      const { data, error} = await supabase
-        .from('todo')
-        .select()
-        .lt('id', findVal)
-        .match({ is_completed: false })
-        .limit(1)
-        .order('id', { ascending: false })
-  
-        inCompletedTask(data[0], 1);
-    }
+  }
+  else if (buttonState.state == 'cmp' && completeTaskCount >= 12) {
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .lt('id', findVal)
+      .match({ is_completed: true })
+      .limit(1)
+      .order('id', { ascending: false })
+
+    completedTask(data[0]);
+  }
+  else if (buttonState.state == 'incmp' && incompleteTaskCount >= 12) {
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .lt('id', findVal)
+      .match({ is_completed: false })
+      .limit(1)
+      .order('id', { ascending: false })
+
+    inCompletedTask(data[0], 1);
+  }
 }
 
 
 // Empty Display Showing
 
 async function emptyDisplay(searchedWord) {
-    const container = document.querySelector('.tasks');
-    const emptyScreen = document.querySelector('.empty-task');
-    const emptyTitle = document.querySelector('.empty-head');
-    
-    if(searchedWord && !container.hasChildNodes()) {
-      emptyTitle.innerText = "The task containing ${searchedWord} doesn't found.";
-      emptyScreen.style.display = 'flex';
-    }
-    else if(buttonState.state == 'all' && allTaskCount == 0 && container.childElementCount == 0) {
-      emptyTitle.innerText = "You didn't add any task. Please, add one.";
-      emptyScreen.style.display = 'flex';
-    }
-    else if(buttonState.state == 'cmp' && completeTaskCount == 0  && container.childElementCount == 0) {
-      emptyTitle.innerText = "You didn't add any completed task. Please, complete one.";
-      emptyScreen.style.display = 'flex';
-    }
-    else if(buttonState.state == 'incmp' && incompleteTaskCount == 0  && container.childElementCount == 0) {
-      emptyTitle.innerText = "You didn't add any incompleted task. Please, add one.";
-      emptyScreen.style.display = 'flex';
-    }
-    else if(emptyScreen) {
-      emptyScreen.style.display = 'none';
-    }
+  const container = document.querySelector('.tasks');
+  const emptyScreen = document.querySelector('.empty-task');
+  const emptyTitle = document.querySelector('.empty-head');
+
+  if (searchedWord && !container.hasChildNodes()) {
+    emptyTitle.innerText = "The task  " + searchedWord + " doesn't found.";
+    emptyScreen.style.display = 'flex';
+  }
+  else if (buttonState.state == 'all' && allTaskCount == 0 && container.childElementCount == 0) {
+    emptyTitle.innerText = "You didn't add any task. Please, add one.";
+    emptyScreen.style.display = 'flex';
+  }
+  else if (buttonState.state == 'cmp' && completeTaskCount == 0 && container.childElementCount == 0) {
+    emptyTitle.innerText = "You didn't add any completed task. Please, complete one.";
+    emptyScreen.style.display = 'flex';
+  }
+  else if (buttonState.state == 'incmp' && incompleteTaskCount == 0 && container.childElementCount == 0) {
+    emptyTitle.innerText = "You didn't add any incompleted task. Please, add one.";
+    emptyScreen.style.display = 'flex';
+  }
+  else if (emptyScreen) {
+    emptyScreen.style.display = 'none';
+  }
 }
 
 async function countTask() {
-    mainSpinnerOpen();
-    const { data, error } = await supabase
-      .from('todo')
-      .select()
-      .order('id', { ascending: false })
-    mainSpinnerClose();
-
-    allTaskCount = data.length;
-    for(var result of data) {
-        if(result.is_completed == true) {
-          completeTaskCount++;
-        }
-    }
-    incompleteTaskCount = allTaskCount - completeTaskCount;
-}
-
-async function addAllTask() {
-
   mainSpinnerOpen();
   const { data, error } = await supabase
     .from('todo')
     .select()
     .order('id', { ascending: false })
-    .limit(12)
   mainSpinnerClose();
 
+  allTaskCount = data.length;
+  for (var result of data) {
+    if (result.is_completed == true) {
+      completeTaskCount++;
+    }
+  }
+  incompleteTaskCount = allTaskCount - completeTaskCount;
+}
+
+async function addAllTask() {
 
   const container = document.querySelector('.tasks');
+  const searchTask = document.querySelector('#search-text-area');
 
   while (container.hasChildNodes()) {
     container.removeChild(container.firstChild);
   }
 
-  for (let x of data) {
-    if (x.is_completed === true) {
-      completedTask(x);
-    }
-    else {
-      inCompletedTask(x, 1);
-    }
+  if (searchTask.value.length > 0) {
+      const searchWord = searchTask.value;
+      mainSpinnerOpen();
+      const { data, error } = await supabase
+        .from('todo')
+        .select()
+        .ilike('task_name', '%' + searchWord + '%')
+        .order('id', { ascending: false })
+      mainSpinnerClose();
+
+      for (var i = 0; i < data.length; i++) {
+        if (i == 12) break;
+        if (data[i].is_completed) completedTask(data[i]);
+        else inCompletedTask(data[i], 1);
+      }
+      loadMoreButtonShow(data.length);
   }
 
+  else {
+    mainSpinnerOpen();
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .order('id', { ascending: false })
+      .limit(12)
+    mainSpinnerClose();
+    for (let x of data) {
+      if (x.is_completed === true) {
+        completedTask(x);
+      }
+      else {
+        inCompletedTask(x, 1);
+      }
+    }
+    loadMoreButtonShow();
+  }
   emptyDisplay();
-  loadMoreButtonShow();
 }
 
 
@@ -647,10 +666,38 @@ async function inCmpTask() {
   document.getElementById('all-btn').style.background = '#FFFFFF';
   document.getElementById('com-btn').style.background = '#FFFFFF';
   document.getElementById('incom-btn').style.background = '#DDE2FF';
+  const container = document.querySelector('.tasks');
+
 
   buttonState.state = 'incmp';
 
-  mainSpinnerOpen();
+  while (container.hasChildNodes()) {
+    container.removeChild(container.firstChild);
+  }
+
+  const searchTask = document.querySelector('#search-text-area');
+
+  if (searchTask.value.length > 0) {
+    const searchWord = searchTask.value;
+
+    mainSpinnerOpen();
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .ilike('task_name', '%' + searchWord + '%')
+      .match({ is_completed: false })
+      .order('id', { ascending: false })
+    mainSpinnerClose();
+
+    for (var i = 0; i < data.length; i++) {
+      if (i == 12) break;
+      inCompletedTask(data[i]);
+    }
+    loadMoreButtonShow(data.length);
+  }
+  else {
+
+    mainSpinnerOpen();
 
   const { data, error } = await supabase
     .from('todo')
@@ -661,17 +708,12 @@ async function inCmpTask() {
 
   mainSpinnerClose();
 
-  const container = document.querySelector('.tasks');
-
-  while (container.hasChildNodes()) {
-    container.removeChild(container.firstChild);
+    for (let x of data) {
+      inCompletedTask(x, 1);
+    }
+    console.log(incompleteTaskCount, completeTaskCount, allTaskCount);
+    loadMoreButtonShow();
   }
-
-  for (let x of data) {
-    inCompletedTask(x, 1);
-  }
-  console.log(incompleteTaskCount, completeTaskCount, allTaskCount);
-  loadMoreButtonShow();
   emptyDisplay();
 }
 
@@ -692,8 +734,34 @@ async function cmpTask() {
   document.getElementById('com-btn').style.background = '#DDE2FF';
   document.getElementById('incom-btn').style.background = '#FFFFFF';
   buttonState.state = 'cmp';
+  const container = document.querySelector('.tasks');
+  const searchTask = document.querySelector('#search-text-area');
 
-  mainSpinnerOpen();
+  while (container.hasChildNodes()) {
+    container.removeChild(container.firstChild);
+  }
+
+  if (searchTask.value.length > 0) {
+    const searchWord = searchTask.value;
+
+    mainSpinnerOpen();
+
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .ilike('task_name', '%' + searchWord + '%')
+      .match({ is_completed: true })
+      .order('id', { ascending: false })
+    mainSpinnerClose();
+
+    for (var i = 0; i < data.length; i++) {
+      if (i == 12) break;
+      completedTask(data[i]);
+    }
+    loadMoreButtonShow(data.length);
+  }
+  else {
+    mainSpinnerOpen();
 
   const { data, error } = await supabase
     .from('todo')
@@ -704,19 +772,14 @@ async function cmpTask() {
 
   mainSpinnerClose();
 
-  const container = document.querySelector('.tasks');
-
-  while (container.hasChildNodes()) {
-    container.removeChild(container.firstChild);
-  }
-
-  const searchTask = document.querySelector('#search-text-area');
     for (let x of data) {
       completedTask(x);
     }
 
     loadMoreButtonShow();
-    emptyDisplay();
+  }
+
+  emptyDisplay();
 }
 
 async function searchImg() {
@@ -735,10 +798,18 @@ async function searchImg() {
     else cmpTask();
   }
 
-  setTimeout(searchTextArea.addEventListener('keyup', (e) => { searchTask(e), 1000}));
+  searchTextArea.addEventListener('keyup', function (e) {
+    console.log(e);
+    clearTimeout(timer);
+
+    timer = setTimeout(() => { searchTask(e) }, 1000);
+  });
 }
 
+
 async function searchTask(e) {
+  const loadMoreDiv = document.querySelector('.load-more-div');
+  if(loadMoreDiv) loadMoreDiv.style.display = 'none';
   var searchWord = e.target.value;
   const container = document.querySelector('.tasks');
 
@@ -747,15 +818,16 @@ async function searchTask(e) {
   }
 
   if (buttonState.state == 'all') {
-    console.log('%'+searchWord+'%');
-    const { data, error } = await supabase
-    .from('todo')
-    .select()
-    .ilike('task_name', '%'+searchWord+'%')
-    .order('id', { ascending: false })
-
-    console.log(data);
     
+    mainSpinnerOpen();
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .ilike('task_name', '%' + searchWord + '%')
+      .order('id', { ascending: false })
+
+    mainSpinnerClose();
+
     for (var i = 0; i < data.length; i++) {
       if (i == 12) break;
       if (data[i].is_completed) completedTask(data[i]);
@@ -764,14 +836,14 @@ async function searchTask(e) {
     loadMoreButtonShow(data.length);
   }
   else if (buttonState.state == 'incmp') {
-
+    mainSpinnerOpen();
     const { data, error } = await supabase
-    .from('todo')
-    .select()
-    .ilike('task_name', '%${searchWord}%')
-    .match({is_completed: false})
-    .order('id', { ascending: false })
-
+      .from('todo')
+      .select()
+      .ilike('task_name', '%' + searchWord + '%')
+      .match({ is_completed: false })
+      .order('id', { ascending: false })
+    mainSpinnerClose();
     for (var i = 0; i < data.length; i++) {
       if (i == 12) break;
       inCompletedTask(data[i]);
@@ -779,80 +851,81 @@ async function searchTask(e) {
     loadMoreButtonShow(data.length);
   }
   else {
+    mainSpinnerOpen();
     const { data, error } = await supabase
-    .from('todo')
-    .select()
-    .ilike('task_name', '%${searchWord}%')
-    .match({is_completed: true})
-    .order('id', { ascending: false })
-
+      .from('todo')
+      .select()
+      .ilike('task_name', '%' + searchWord + '%')
+      .match({ is_completed: true })
+      .order('id', { ascending: false })
+    mainSpinnerClose();
     for (var i = 0; i < data.length; i++) {
       if (i == 12) break;
       completedTask(data[i]);
     }
     loadMoreButtonShow(data.length);
   }
-  emptyDisplay();
+  emptyDisplay(searchWord);
 }
 
 async function loadMore() {
 
-      var findVal = 500;
-      const container = document.querySelector('.tasks');
-      if (container.hasChildNodes()) {
-        findVal = parseInt(container.lastChild.firstChild.dataset.id);
+  var findVal = 500;
+  const container = document.querySelector('.tasks');
+  if (container.hasChildNodes()) {
+    findVal = parseInt(container.lastChild.firstChild.dataset.id);
+  }
+
+  if (buttonState.state == 'all') {
+    mainSpinnerOpen();
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .lt('id', findVal)
+      .limit(12)
+      .order('id', { ascending: false })
+    mainSpinnerClose()
+
+    for (let x of data) {
+      if (x.is_completed === true) {
+        completedTask(x);
       }
-
-    if (buttonState.state == 'all') {
-      mainSpinnerOpen();
-      const { data, error } = await supabase
-        .from('todo')
-        .select()
-        .lt('id', findVal)
-        .limit(12)
-        .order('id', { ascending: false })
-      mainSpinnerClose()
-
-      for (let x of data) {
-        if (x.is_completed === true) {
-          completedTask(x);
-        }
-        else {
-          inCompletedTask(x, 1);
-        }
-      }
-    }
-    else if (buttonState.state == 'cmp') {
-      mainSpinnerOpen();
-      const { data, error } = await supabase
-        .from('todo')
-        .select()
-        .lt('id', findVal)
-        .match({is_completed: true})
-        .limit(12)
-        .order('id', { ascending: false })
-      mainSpinnerClose()
-
-      for (let x of data) {
-          completedTask(x);
+      else {
+        inCompletedTask(x, 1);
       }
     }
-    else {
-      mainSpinnerOpen();
-      const { data, error } = await supabase
-        .from('todo')
-        .select()
-        .lt('id', findVal)
-        .match({is_completed: false})
-        .limit(12)
-        .order('id', { ascending: false })
-      mainSpinnerClose()
+  }
+  else if (buttonState.state == 'cmp') {
+    mainSpinnerOpen();
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .lt('id', findVal)
+      .match({ is_completed: true })
+      .limit(12)
+      .order('id', { ascending: false })
+    mainSpinnerClose()
 
-      for (let x of data) {
-          inCompletedTask(x, 1);
-      }
+    for (let x of data) {
+      completedTask(x);
     }
-    loadMoreButtonShow(container);
+  }
+  else {
+    mainSpinnerOpen();
+    const { data, error } = await supabase
+      .from('todo')
+      .select()
+      .lt('id', findVal)
+      .match({ is_completed: false })
+      .limit(12)
+      .order('id', { ascending: false })
+    mainSpinnerClose()
+
+    for (let x of data) {
+      inCompletedTask(x, 1);
+    }
+  }
+  loadMoreButtonShow(container);
 }
 
 function getDate(date) {
@@ -898,7 +971,7 @@ function toast(err) {
     document.getElementById('toast').style.display = 'flex';
     setTimeout(function () {
       document.getElementById('toast').style.display = 'none';
-    }, 1000);
+    }, 500);
   }
 }
 
@@ -915,58 +988,64 @@ function enableAllCompleteIncompleteButton() {
 }
 
 function loadMoreButtonShow(container) {
-      const loadMoreDiv = document.querySelector('.load-more-div');
-      const showLessDiv = document.querySelector('.show-less-div');
+  const loadMoreDiv = document.querySelector('.load-more-div');
+  const showLessDiv = document.querySelector('.show-less-div');
 
-      console.log("hello");
-
-      if(showLessDiv && showLessDiv.style.display == 'flex') {
-          return;
-      }
-      else if(container && container.childElementCount == 12) {
-        loadMoreDiv.style.display = 'flex';
-      }
-      else if((container && buttonState.state == 'all' && allTaskCount == container.childElementCount) || 
-      (container && buttonState.state == 'cmp' && completeTaskCount == container.childElementCount) || 
-      (container && buttonState.state == 'incmp' && incompleteTaskCount == container.childElementCount)) {
-        loadMoreDiv.style.display = 'none';
-      }
-      else if(buttonState.state == 'all' && allTaskCount > 12) {
-          loadMoreDiv.style.display = 'flex';
-      }
-      else if(buttonState.state == 'cmp' && completeTaskCount > 12) {
-        loadMoreDiv.style.display = 'flex';
-      }
-      else if(buttonState.state == 'incmp' && incompleteTaskCount > 12) {
-        loadMoreDiv.style.display = 'flex';
-      }
-      else if(loadMoreDiv.style.display === 'flex') {
-        loadMoreDiv.style.display = 'none';
-      }
-      showLessButtonShow(container);
+  console.log(typeof container)
+  if(typeof container == 'number') {
+      if(container > 12)  loadMoreDiv.style.display = 'flex'; 
+      else loadMoreDiv.style.display = 'none';
+  }
+  else if (container && container.childElementCount === 0 && loadMoreDiv.style.display == 'flex') {
+    loadMoreDiv.style.display = 'none';
+  }
+  else if (showLessDiv && showLessDiv.style.display == 'flex') {
+    return;
+  }
+  else if (container && container.childElementCount == 12) {
+    loadMoreDiv.style.display = 'flex';
+  }
+  else if ((container && buttonState.state == 'all' && allTaskCount == container.childElementCount) ||
+    (container && buttonState.state == 'cmp' && completeTaskCount == container.childElementCount) ||
+    (container && buttonState.state == 'incmp' && incompleteTaskCount == container.childElementCount)) {
+    loadMoreDiv.style.display = 'none';
+  }
+  else if (buttonState.state == 'all' && allTaskCount > 12) {
+    loadMoreDiv.style.display = 'flex';
+  }
+  else if (buttonState.state == 'cmp' && completeTaskCount > 12) {
+    loadMoreDiv.style.display = 'flex';
+  }
+  else if (buttonState.state == 'incmp' && incompleteTaskCount > 12) {
+    loadMoreDiv.style.display = 'flex';
+  }
+  else if (loadMoreDiv.style.display === 'flex') {
+    loadMoreDiv.style.display = 'none';
+  }
+  showLessButtonShow(container);
 }
 
 function showLessButtonShow(container) {
   const showLessDiv = document.querySelector('.show-less-div');
-  if(container && ((buttonState.state == 'all' && allTaskCount > 12 && allTaskCount == container.childElementCount) ||
-  (buttonState.state == 'cmp' && completeTaskCount > 12 && completeTaskCount == container.childElementCount) || 
-  (buttonState.state == 'incmp' && incompleteTaskCount > 12 & incompleteTaskCount == container.childElementCount))) {
-      showLessDiv.style.display = 'flex';
+  if (container && ((buttonState.state == 'all' && allTaskCount > 12 && allTaskCount == container.childElementCount) ||
+    (buttonState.state == 'cmp' && completeTaskCount > 12 && completeTaskCount == container.childElementCount) ||
+    (buttonState.state == 'incmp' && incompleteTaskCount > 12 & incompleteTaskCount == container.childElementCount))) {
+    showLessDiv.style.display = 'flex';
   }
-  else if(showLessDiv.style.display == 'flex') {
-      showLessDiv.style.display = 'none';
+  else if (showLessDiv.style.display == 'flex') {
+    showLessDiv.style.display = 'none';
   }
 }
 
 function showLess() {
-    document.querySelector('.show-less-div').style.display = 'none';
-    if(buttonState.state == 'all') {
-        allTask();
-    }
-    else if(buttonState.state == 'cmp') {
-        cmpTask();
-    }
-    else {
-      inCmpTask();
-    }
+  document.querySelector('.show-less-div').style.display = 'none';
+  if (buttonState.state == 'all') {
+    allTask();
+  }
+  else if (buttonState.state == 'cmp') {
+    cmpTask();
+  }
+  else {
+    inCmpTask();
+  }
 }
