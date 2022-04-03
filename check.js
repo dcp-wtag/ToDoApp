@@ -11,6 +11,11 @@ async function countingAllTheTask() {
   await allTask();
 }
 
+// window.addEventListener('click', (e)=>{
+//   if(e.target.className == 'container-div') {
+//       document.getElementById('search-text-area').style.visibility = 'hidden';
+//   }
+//   });
 
 function addedTaskCart() {
 
@@ -218,6 +223,8 @@ function completedTask(Data, oldDiv) {
   }
 
   delBtn.addEventListener('click', async (e) => {
+    
+    loadMoreButtonShow();
     allTaskCount--;
     completeTaskCount--;
     spinnerOpen(divCartElement, spinnerImg);
@@ -236,6 +243,7 @@ function completedTask(Data, oldDiv) {
       container.removeChild(divCartElementSpinner);
     }
     loadMoreButtonShow();
+    showLessButtonShow();
     emptyDisplay();
   });
 }
@@ -362,6 +370,7 @@ function editedTask(oldDiv, Data) {
   });
 
   delBtn.addEventListener('click', async (e) => {
+    loadMoreButtonShow();
     allTaskCount--;
     incompleteTaskCount--;
     spinnerOpen(divCartElement, spinnerImg);
@@ -463,6 +472,7 @@ function inCompletedTask(Data, flag) {
   }
 
   delBtn.addEventListener('click', async (e) => {
+    loadMoreButtonShow();
     allTaskCount--;
     incompleteTaskCount--;
     spinnerOpen(divCartElement, spinnerImg);
@@ -570,7 +580,7 @@ async function emptyDisplay(searchedWord) {
   const container = document.querySelector('.tasks');
   const emptyScreen = document.querySelector('.empty-task');
   const emptyTitle = document.querySelector('.empty-head');
-
+console.log(searchedWord)
   if (searchedWord && !container.hasChildNodes()) {
     emptyTitle.innerText = "The task  " + searchedWord + " doesn't found.";
     emptyScreen.style.display = 'flex';
@@ -617,6 +627,9 @@ async function addAllTask() {
   while (container.hasChildNodes()) {
     container.removeChild(container.firstChild);
   }
+  if(document.querySelector('.load-more-div').style.display == 'flex') {
+    document.querySelector('.load-more-div').style.display = 'none';
+  }
 
   if (searchTask.value.length > 0) {
       const searchWord = searchTask.value;
@@ -634,6 +647,7 @@ async function addAllTask() {
         else inCompletedTask(data[i], 1);
       }
       loadMoreButtonShow(data.length);
+      emptyDisplay(searchWord);
   }
 
   else {
@@ -653,8 +667,8 @@ async function addAllTask() {
       }
     }
     loadMoreButtonShow();
+    emptyDisplay();
   }
-  emptyDisplay();
 }
 
 
@@ -667,12 +681,17 @@ async function inCmpTask() {
   document.getElementById('com-btn').style.background = '#FFFFFF';
   document.getElementById('incom-btn').style.background = '#DDE2FF';
   const container = document.querySelector('.tasks');
+  loadMoreButtonShow();
+  showLessButtonShow();
 
 
   buttonState.state = 'incmp';
 
   while (container.hasChildNodes()) {
     container.removeChild(container.firstChild);
+  }
+  if(document.querySelector('.load-more-div').style.display == 'flex') {
+    document.querySelector('.load-more-div').style.display = 'none';
   }
 
   const searchTask = document.querySelector('#search-text-area');
@@ -694,6 +713,7 @@ async function inCmpTask() {
       inCompletedTask(data[i]);
     }
     loadMoreButtonShow(data.length);
+    emptyDisplay(searchWord);
   }
   else {
 
@@ -713,8 +733,8 @@ async function inCmpTask() {
     }
     console.log(incompleteTaskCount, completeTaskCount, allTaskCount);
     loadMoreButtonShow();
+    emptyDisplay();
   }
-  emptyDisplay();
 }
 
 
@@ -736,9 +756,14 @@ async function cmpTask() {
   buttonState.state = 'cmp';
   const container = document.querySelector('.tasks');
   const searchTask = document.querySelector('#search-text-area');
+  loadMoreButtonShow();
+  showLessButtonShow();
 
   while (container.hasChildNodes()) {
     container.removeChild(container.firstChild);
+  }
+  if(document.querySelector('.load-more-div').style.display == 'flex') {
+    document.querySelector('.load-more-div').style.display = 'none';
   }
 
   if (searchTask.value.length > 0) {
@@ -759,6 +784,7 @@ async function cmpTask() {
       completedTask(data[i]);
     }
     loadMoreButtonShow(data.length);
+    emptyDisplay(searchWord);
   }
   else {
     mainSpinnerOpen();
@@ -777,9 +803,10 @@ async function cmpTask() {
     }
 
     loadMoreButtonShow();
+    emptyDisplay();
   }
 
-  emptyDisplay();
+  
 }
 
 async function searchImg() {
@@ -846,7 +873,7 @@ async function searchTask(e) {
     mainSpinnerClose();
     for (var i = 0; i < data.length; i++) {
       if (i == 12) break;
-      inCompletedTask(data[i]);
+      inCompletedTask(data[i], 1);
     }
     loadMoreButtonShow(data.length);
   }
