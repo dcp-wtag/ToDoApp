@@ -55,7 +55,9 @@ function addedTaskCart() {
 
   const textArea = document.createElement('textarea');
   textArea.className = 'add-task-item';
-  textArea.focus();
+  
+  setTimeout(()=>{textArea.focus();}, 0);
+  
   textArea.placeholder = "Enter your Task...";
   textArea.maxLength = "50";
   textArea.cols = "30";
@@ -277,9 +279,8 @@ function editedTask(oldDiv, Data) {
   textArea.rows = "2";
   textArea.innerText = oldDiv.firstChild.firstChild.firstChild.innerText;
   const end = textArea.value.length;
-  textArea.autofocus = true;
   textArea.setSelectionRange(end, end);
-  textArea.focus();
+  setTimeout(()=>{textArea.focus();}, 0);
 
   divTextArea.appendChild(textArea);
 
@@ -621,6 +622,7 @@ async function countTask() {
 
 async function addAllTask() {
 
+  document.getElementById('create-btn').disabled = false;
   const container = document.querySelector('.tasks');
   const searchTask = document.querySelector('#search-text-area');
 
@@ -677,6 +679,7 @@ async function addAllTask() {
 
 async function inCmpTask() {
 
+  document.getElementById('create-btn').disabled = false;
   document.getElementById('all-btn').style.background = '#FFFFFF';
   document.getElementById('com-btn').style.background = '#FFFFFF';
   document.getElementById('incom-btn').style.background = '#DDE2FF';
@@ -750,6 +753,8 @@ async function allTask() {
 }
 
 async function cmpTask() {
+  
+  document.getElementById('create-btn').disabled = false;
   document.getElementById('all-btn').style.background = '#FFFFFF';
   document.getElementById('com-btn').style.background = '#DDE2FF';
   document.getElementById('incom-btn').style.background = '#FFFFFF';

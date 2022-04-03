@@ -399,7 +399,7 @@ body{
     display: flex;
     width: calc((100% - 150px) / 4);
     height: 163px;
-    margin-bottom: 25px;
+    margin-bottom: 50px;
     border: 1px solid #DDE2FF;
     box-sizing: border-box;
     border-radius: 5px;
