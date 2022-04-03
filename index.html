@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>ToDo App</title>
+    <link rel="icon" href="./icons/Vector.png" type="image/icon type">
+</head>
+<body>
+    <div id='preloader'></div>
+    <div id='main-spinner' style="position: absolute;"><img class="main-spinner-img" src="./icons/Vector (8).png" alt=""></div>
+    <div id='toast'><img class="tick-toast" src="./icons/Vector (9).png" alt=""><p id='tick-text'>Changes are saved Successfully</p></div>
+    <div id='toast-unsuccess'><p id='tick-text'>We couldn't save your changes</p></div>
+    <div class="par-div">
+        <div class="appbar">
+            <div class="logoTitle-search">
+                <div class="logo-title-container">
+                    <button class="logo-title-btn" onClick="window.location.reload();"><img src="icons/Vector.png" alt="logo"><p id="title">Todos</p></button>
+                </div>
+                <div class='search-icon-container'>
+                    <input type="text" class="search-text-input" id="search-text-area" style="visibility: hidden;">
+                    <button data-title="Search any Task" class="search-btn"><img class="search-icon" src="icons/Vector (1).png" alt="search" onclick="searchImg()"></button>
+                </div>
+            </div>
+        </div>
+        <div class = 'container-div'>
+            <div class="task-header">
+                <p id="add-task">Add Tasks</p>
+            </div>
+            <div class="btn-div">
+                <button id="create-btn" onclick="addedTaskCart()">+ Create</button>
+                <div class="all-incom-com-btn-div">
+                    <button id = "all-btn" onclick="allTask()">All</button>
+                    <button id="incom-btn" onclick="inCmpTask()">Incomplete</button>
+                    <button id="com-btn" onclick="cmpTask()">Complete</button>
+                </div>
+            </div>
+            <div class="empty-task" style="display: none;"><img class="empty-image" src='./icons/empty.png'><p class="empty-head">You didn't add any task. Please, add one.</p></div>
+            <div class = "tasks"></div>
+            <div class = 'load-more-div' style="display: none;"><button class = 'load-more-button' onclick="loadMore()">Load More</button></div>
+            <div class = 'show-less-div' style="display: none;"><button class = 'show-less-button' onclick="showLess()">Show Less</button></div>
+        </div>
+    </div>
+    <script src="windowLoader.js"></script>
+    <script src="check.js"></script>
+    <script src="textArea.js"></script>
+
+</body>
+</html>
+
