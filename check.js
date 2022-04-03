@@ -145,6 +145,7 @@ async function myFunc(txt, div, img) {
 function completedTask(Data, oldDiv) {
 
   const container = document.querySelector('.tasks');
+  const searchWord = document.getElementById('search-text-area').value;
 
   const divCartElementSpinner = document.createElement('div');
   const spinnerImg = document.createElement('img');
@@ -246,7 +247,13 @@ function completedTask(Data, oldDiv) {
     }
     loadMoreButtonShow();
     showLessButtonShow();
-    emptyDisplay();
+    
+    if(searchWord.length > 0) {
+      emptyDisplay(searchWord);
+    }
+    else {
+      emptyDisplay();
+    }
   });
 }
 
@@ -254,6 +261,8 @@ function completedTask(Data, oldDiv) {
 // Edited Task Cart
 
 function editedTask(oldDiv, Data) {
+
+  const searchWord = document.getElementById('search-text-area').value;
   const container = document.querySelector('.tasks');
 
   const divCartElement = document.createElement('div');
@@ -333,7 +342,13 @@ function editedTask(oldDiv, Data) {
       toast(error);
       oldDiv.firstChild.firstChild.firstChild.innerText = textArea.value;
     }
-    container.replaceChild(oldDiv, divCartElementSpinner);
+    if(searchWord.length > 0 && textArea.value.search(searchWord) == -1) {
+        container.removeChild(divCartElementSpinner);
+        emptyDisplay(searchWord);
+    }
+    else {
+        container.replaceChild(oldDiv, divCartElementSpinner);
+    }
   });
 
   cmpBtn.addEventListener('click', async (e) => {
@@ -367,7 +382,13 @@ function editedTask(oldDiv, Data) {
       divCartElementSpinner.remove();
     }
     loadMoreButtonShow(container);
-    emptyDisplay();
+    
+    if(searchWord.length > 0) {
+      emptyDisplay(searchWord);
+    }
+    else {
+      emptyDisplay();
+    }
   });
 
   delBtn.addEventListener('click', async (e) => {
@@ -384,7 +405,13 @@ function editedTask(oldDiv, Data) {
     divCartElementSpinner.remove();
 
     loadMoreButtonShow();
-    emptyDisplay();
+    
+    if(searchWord.length > 0) {
+      emptyDisplay(searchWord);
+    }
+    else {
+      emptyDisplay();
+    }
   });
 
   return divCartElementSpinner;
@@ -394,6 +421,8 @@ function editedTask(oldDiv, Data) {
 // Incompleted Task Cart
 
 function inCompletedTask(Data, flag) {
+
+  const searchWord = document.getElementById('search-text-area').value;
   const container = document.querySelector('.tasks');
 
 
@@ -465,7 +494,11 @@ function inCompletedTask(Data, flag) {
     if (allTaskCount > 12 && !document.querySelector('.load-more-button')) {
 
     }
-    if (!flag) container.prepend(divCartElementSpinner);
+    if(searchWord.length > 0 && Data.task_name.search(searchWord) == -1) {
+      // container.removeChild(divCartElementSpinner);
+      emptyDisplay(searchWord);
+    }
+    else if (!flag) container.prepend(divCartElementSpinner);
     else container.appendChild(divCartElementSpinner);
   }
   else {
@@ -490,7 +523,13 @@ function inCompletedTask(Data, flag) {
       container.removeChild(divCartElementSpinner);
     }
     loadMoreButtonShow();
-    emptyDisplay();
+    
+    if(searchWord.length > 0) {
+      emptyDisplay(searchWord);
+    }
+    else {
+      emptyDisplay();
+    }
   });
 
   editBtn.addEventListener('click', async (e) => {
@@ -522,7 +561,12 @@ function inCompletedTask(Data, flag) {
 
     spinnerClose(divCartElement, spinnerImg);
 
-    emptyDisplay();
+    if(searchWord.length > 0) {
+      emptyDisplay(searchWord);
+    }
+    else {
+      emptyDisplay();
+    }
     loadMoreButtonShow();
   });
 }
@@ -822,12 +866,14 @@ async function searchImg() {
     searchTextArea.focus();
   }
   else {
-    searchTextArea.value = "";
     searchTextArea.style.visibility = 'hidden';
+    if(searchTextArea.value.length > 0) {
+        searchTextArea.value = "";
 
-    if (buttonState.state == 'all') allTask();
-    else if (buttonState.state == 'incmp') inCmpTask();
-    else cmpTask();
+        if (buttonState.state == 'all') allTask();
+        else if (buttonState.state == 'incmp') inCmpTask();
+        else cmpTask();
+    } 
   }
 
   searchTextArea.addEventListener('keyup', function (e) {
@@ -1003,7 +1049,7 @@ function toast(err) {
     document.getElementById('toast').style.display = 'flex';
     setTimeout(function () {
       document.getElementById('toast').style.display = 'none';
-    }, 500);
+    }, 1000);
   }
 }
 
